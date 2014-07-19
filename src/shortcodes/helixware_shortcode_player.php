@@ -25,7 +25,7 @@ function hewa_shortcode_player( $atts ) {
     // Flowplayer
     // ENQUEUE PLAYER SCRIPT HERE
     wp_enqueue_style( 'flowplayer-css', plugins_url( 'js/flowplayer/skin/minimalist.css', __FILE__ ) );
-    wp_enqueue_style( 'flowplayer-buttons-css', plugins_url( 'css/flowplayerButtons.css', __FILE__ ) );
+    wp_enqueue_style( 'flowplayer-buttons-css', plugins_url( 'css/flowplayerCustom.css', __FILE__ ) );
     wp_enqueue_script( 'flowplayer', plugins_url('js/flowplayer/flowplayer.min.js', __FILE__ ) );
 
     // Our js

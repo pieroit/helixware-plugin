@@ -143,16 +143,17 @@ jQuery( function ( $ ) {
             var width = $(el).data('width');    // passed with data because in css gets overwritten from flowplayer
             $( el ).width( width );               // assign width
             width = $(el).width();              // to get the width in number of pixels even if it was a percentage
-            var ratio = $(el).data( 'ratio' );  // flowplayer wants the inverse of ratio
+            var ratio = $(el).data( 'ratio' );
             var height = width / ratio;
 
             // Assign width
             $( el ).width( width )
                  .height( height )
-                 .css('background-color', 'gray');
 
             // player instantiation
             $( el ).flowplayer({
+                key: "$289122895653393",
+                logo: "http://localhost/wordpress3-9/wp-content/plugins/helixware/img/logo.png",
                 rtmp: rtmpServer,
                 resolutions: resolutions,
                 playlist: [resolutions[0].sources]
