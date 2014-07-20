@@ -53,6 +53,11 @@ function hewa_shortcode_player( $atts ) {
         ( null !== $params['listbar'] ? '&cat=' . $params['listbar_cat'] : '' ) ); // add the category if we have the listbar.
     $player['width']       = $params['width'];
     $player['aspectratio'] = $params['aspectratio'];
+    $player['skin']        = plugins_url( 'js/jwplayer-6.9/five.xml', __FILE__ );
+    $player['logo']        = array(
+        'file'  => plugins_url( 'js/jwplayer-6.9/logo.png', __FILE__ ),
+        'link'  => get_site_url()
+    );
 
     // Build the playlist object.
     if ( null !== $params['listbar'] ) {
