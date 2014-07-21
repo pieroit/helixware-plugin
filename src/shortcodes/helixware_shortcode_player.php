@@ -24,7 +24,12 @@ function hewa_shortcode_player( $atts ) {
         'listbar'      => null,
         'listbar_size' => 240,
         'listbar_cat'  => 'for-you',
-        'autostart'    => true
+        'autostart'    => true,
+        'max'          => 5,
+        'skin'         => hewa_get_option( HEWA_SETTINGS_JWPLAYER_DEFAULT_SKIN, '' ),
+        'logo_url'     => hewa_get_option( HEWA_SETTINGS_JWPLAYER_LOGO_URL, '' ),
+        'logo_link'    => hewa_get_option( HEWA_SETTINGS_JWPLAYER_LOGO_LINK, '' ),
+        'ga_idstring'  => 'title'
     ), $atts);
 
     // Queue the scripts.
@@ -47,10 +52,15 @@ function hewa_shortcode_player( $atts ) {
     $player                = array();
     $player['androidhls']  = true;
     $player['autostart']   = ( $params['autostart'] ? 'true' : 'false' );
-    $player['playlist']    = admin_url( 'admin-ajax.php?action=hewa_rss&id=' . $asset_id .
-        '&t=' . $title_u . // set the title
-        '&i=' . $image_u . // set the image
-        ( null !== $params['listbar'] ? '&cat=' . $params['listbar_cat'] : '' ) ); // add the category if we have the listbar.
+    $player['playlist']    = apply_filters(
+        HEWA_FILTERS_PLAYER_PLAYLIST_URL,
+        admin_url( 'admin-ajax.php?action=hewa_rss&id=' . $asset_id .
+            '&t=' . $title_u . // set the title
+            '&i=' . $image_u . // set the image
+            '&max=' . $params['max'] . // set the maximum number of elements
+            ( null !== $params['listbar'] ? '&cat=' . $params['listbar_cat'] : '' ) // add the category if we have the listbar.
+        )
+    );
     $player['width']       = $params['width'];
     $player['aspectratio'] = $params['aspectratio'];
     $player['skin']        = plugins_url( 'js/jwplayer-6.9/five.xml', __FILE__ );
@@ -59,6 +69,22 @@ function hewa_shortcode_player( $atts ) {
         'link'  => get_site_url()
     );
 
+    // Add the logo and the link if provided.
+    if ( ! empty( $params['logo_url'] ) ) {
+
+        $player['logo'] = array( 'file' => $params['logo_url'] );
+
+        if ( ! empty( $params['logo_link'] ) ) {
+            $player['logo']['link'] = $params['logo_link'];
+        }
+
+    }
+
+    // Add the skin if specified.
+    if ( ! empty( $params['skin'] ) ) {
+        $player['skin'] = $params['skin'];
+    }
+
     // Build the playlist object.
     if ( null !== $params['listbar'] ) {
         $player['listbar'] = array(
@@ -66,6 +92,9 @@ function hewa_shortcode_player( $atts ) {
             'size'     => $params['listbar_size']
         );
     }
+
+    // Set the GA setting.
+    $player['ga'] = array( 'idstring' => $params['ga_idstring'] );
 
     // Create the JSON version of the player.
     $player_json = json_encode( $player );
