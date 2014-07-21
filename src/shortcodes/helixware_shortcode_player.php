@@ -82,9 +82,9 @@ function hewa_shortcode_player( $atts ) {
 
     // Build the playlist object.
     if ( null !== $params['listbar'] ) {
-        $player['listbar'] = array(
+        $player['custom_listbar'] = array(
             'position' => $params['listbar'],
-            'size'     => $params['listbar_size']
+           'size'     => $params['listbar_size']
         );
     }
 
@@ -97,13 +97,101 @@ function hewa_shortcode_player( $atts ) {
     $loading  = esc_html__( 'Loading player...', HEWA_LANGUAGE_DOMAIN );
 
     $result = <<<EOF
-        <div id="$id">$loading</div>
+        <div id="$id">$loading</div>    <!-- Player div -->
+        <div id="$id-playlist" class="playlist"></div>   <!-- Playlist div -->
         <script type="text/javascript">
             jQuery( function( $ ) {
-                jwplayer.key = '$jwplayer_key';
+                var listBar = $player_json.custom_listbar;
+                var threshold = 600;    // Switch playlist position threshold
+                var playlistSelector = '#' + '$id-playlist';
+                var videoSelector = '#' + '$id';
+
+                jwplayer.key = '$jwplayer_key'; 
                 jwplayer('$id').setup($player_json);
+
+                // We build a playlist only if the user set the 'listbar=bottom|right' shortcode param
+                if( listBar !== undefined ) {
+                    // When player is ready, build playlist gui.
+                    jwplayer('$id').onReady( function(){
+                        // Get playlist.
+                        var playlist = this.getPlaylist();
+                        // Build elements in playlist and define the click event
+                        for(var v=0; v<playlist.length; v++){
+                            $(
+                                '<div class="playlist-item" data-index="' + v + '">' +
+                                    '<img src="' + playlist[v].image + '"/>' +
+                                    '<span>' + playlist[v].title + '</span>' +
+                                '</div>'
+                            )
+                            .on('click', function(){
+                                var index = $(this).data('index');
+                                jwplayer('$id').playlistItem(index);
+                            })
+                            .appendTo( playlistSelector );
+                        }
+
+                        resizePlayerWithPlaylist();
+                    });
+
+                    //jwplayer('$id').onResize( function(){ // Player resize event is not reliable
+                    $(window).on('resize', function(){
+                        resizePlayerWithPlaylist();
+                    });
+
+                    var resizePlayerWithPlaylist = function(){
+                        var winWidth = $(window).width();
+
+                        if( winWidth < threshold || listBar.position=='bottom' ) {
+                            // Screen size is less than threshold
+                            // or shortcode asked 'listbar=bottom'
+                            // --> playlist will stay bottom
+                            $(videoSelector).parent()
+                                        .width('100%')
+                                        .css('clear', 'both');
+                            $(playlistSelector).addClass('bottom')
+                                        .removeClass('right');
+                        } else {
+                            // --> playlist will stay on the right
+                            $(videoSelector).parent()
+                                        .width('70%')
+                                        .css('float', 'left');
+                            $(playlistSelector).addClass('right')
+                                        .removeClass('bottom')
+                                        .height( $(videoSelector).parent().height() );
+                        }
+                    };
+                }
             } );
         </script>
+        <style>
+            .playlist {
+                overflow: hidden;   
+            }
+            .playlist.bottom {
+                width: 100%;
+                height: auto;
+                clear: both;
+            }
+            .playlist.right {
+                width: 30%;
+                float: left;
+                overflow-y: scroll;
+            }
+            .playlist-item {
+                cursor: pointer;
+                width: 100%;
+                padding: 3px;
+            }
+            .playlist-item > img {
+                width: 50px;
+                height: 50px;
+            }
+            .playlist-item > span {
+                height: 50px;
+                margin-left: 5px;
+                font-size: small;
+            }
+        </style>
 EOF;
 
     return $result;
