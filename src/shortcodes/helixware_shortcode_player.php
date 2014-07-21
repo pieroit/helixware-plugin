@@ -82,7 +82,7 @@ function hewa_shortcode_player( $atts ) {
 
     // Build the playlist object.
     if ( null !== $params['listbar'] ) {
-        $player['custom_listbar'] = array(
+        $player_listbar = array(
             'position' => $params['listbar'],
            'size'     => $params['listbar_size']
         );
@@ -93,6 +93,7 @@ function hewa_shortcode_player( $atts ) {
 
     // Create the JSON version of the player.
     $player_json = json_encode( $player );
+    $player_listbar_json = json_encode( $player_listbar );
 
     $loading  = esc_html__( 'Loading player...', HEWA_LANGUAGE_DOMAIN );
 
@@ -101,7 +102,7 @@ function hewa_shortcode_player( $atts ) {
         <div id="$id-playlist" class="playlist"></div>   <!-- Playlist div -->
         <script type="text/javascript">
             jQuery( function( $ ) {
-                var listBar = $player_json.custom_listbar;
+                var listBar = $player_listbar_json.listbar;
                 var threshold = 600;    // Switch playlist position threshold
                 var playlistSelector = '#' + '$id-playlist';
                 var videoSelector = '#' + '$id';
