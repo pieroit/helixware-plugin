@@ -32,9 +32,6 @@ function hewa_shortcode_player( $atts ) {
         'ga_idstring'  => 'title'
     ), $atts);
 
-    // Queue the scripts.
-    wp_enqueue_script( 'jwplayer', plugins_url('js/jwplayer-6.9/jwplayer.js', __FILE__ ) );
-
     // Get the player key.
     $jwplayer_key = hewa_get_option( HEWA_SETTINGS_JWPLAYER_ID, '' );
 
@@ -50,6 +47,7 @@ function hewa_shortcode_player( $atts ) {
 
     // Build the player array which will then be translated to JavaScript for JWPlayer initialization.
     $player                = array();
+    $player['key']         = $jwplayer_key;
     $player['androidhls']  = true;
     $player['autostart']   = ( $params['autostart'] ? 'true' : 'false' );
     $player['playlist']    = apply_filters(
@@ -80,6 +78,9 @@ function hewa_shortcode_player( $atts ) {
         $player['skin'] = $params['skin'];
     }
 
+    // Set the GA setting.
+    $player['ga'] = array( 'idstring' => $params['ga_idstring'] );
+
     // Build the playlist object.
     if ( null !== $params['listbar'] ) {
         $player_listbar = array(
@@ -87,117 +88,34 @@ function hewa_shortcode_player( $atts ) {
            'size'     => $params['listbar_size']
         );
         unset( $params['listbar'] );
+    } else {
+        $player_listbar = null;
     }
 
-    // Set the GA setting.
-    $player['ga'] = array( 'idstring' => $params['ga_idstring'] );
+    // Queue the scripts.
+    wp_enqueue_script( 'jwplayer', plugins_url('js/jwplayer-6.9/jwplayer.js', __FILE__ ) );
+    wp_enqueue_script( 'helixware-player', plugins_url( 'js/helixware.player.js', __FILE__ ) );
+    wp_localize_script( 'helixware-player', 'hewaPlayerParams', array(
+        'id'        => $id,
+        'setup'     => $player,
+        'listbar'   => $player_listbar
+    ));
+    // Queue listbar responsive css
+    wp_enqueue_style( 'helixware-player-listbar-css', plugins_url( 'css/helixware.player.listbar.css', __FILE__ ) );
 
-    // Create the JSON version of the player.
-    $player_json = json_encode( $player );
-    $player_listbar_json = json_encode( $player_listbar );
+    $loading = esc_html__( 'Loading player...', HEWA_LANGUAGE_DOMAIN );
 
-    $loading  = esc_html__( 'Loading player...', HEWA_LANGUAGE_DOMAIN );
-
-    $result = <<<EOF
-        <div id="$id">$loading</div>    <!-- Player div -->
-        <div id="$id-playlist" class="playlist"></div>   <!-- Playlist div -->
-        <script type="text/javascript">
-            jQuery( function( $ ) {
-                var listBar = $player_listbar_json;
-                var threshold = 600;    // Switch playlist position threshold
-                var playlistSelector = '#' + '$id-playlist';
-                var videoSelector = '#' + '$id';
-
-                jwplayer.key = '$jwplayer_key'; 
-                jwplayer('$id').setup($player_json);
-
-                // We build a playlist only if the user set the 'listbar=bottom|right' shortcode param
-                if( listBar !== undefined ) {
-                    // When player is ready, build playlist gui.
-                    jwplayer('$id').onReady( function(){
-                        // Get playlist.
-                        var playlist = this.getPlaylist();
-                        // Build elements in playlist and define the click event
-                        for(var v=0; v<playlist.length; v++){
-                            $(
-                                '<div class="playlist-item" data-index="' + v + '">' +
-                                    '<img src="' + playlist[v].image + '"/>' +
-                                    '<span>' + playlist[v].title + '</span>' +
-                                '</div>'
-                            )
-                            .on('click', function(){
-                                var index = $(this).data('index');
-                                jwplayer('$id').playlistItem(index);
-                            })
-                            .appendTo( playlistSelector );
-                        }
-
-                        resizePlayerWithPlaylist();
-                    });
-
-                    //jwplayer('$id').onResize( function(){ // Player resize event is not reliable
-                    $(window).on('resize', function(){
-                        resizePlayerWithPlaylist();
-                    });
-
-                    var resizePlayerWithPlaylist = function(){
-                        var winWidth = $(window).width();
-
-                        if( winWidth < threshold || listBar.position=='bottom' ) {
-                            // Screen size is less than threshold
-                            // or shortcode asked 'listbar=bottom'
-                            // --> playlist will stay bottom
-                            $(videoSelector).parent()
-                                        .width('100%')
-                                        .css('clear', 'both');
-                            $(playlistSelector).addClass('bottom')
-                                        .removeClass('right');
-                        } else {
-                            // --> playlist will stay on the right
-                            $(videoSelector).parent()
-                                        .width('70%')
-                                        .css('float', 'left');
-                            $(playlistSelector).addClass('right')
-                                        .removeClass('bottom')
-                                        .height( $(videoSelector).parent().height() );
-                        }
-                    };
-                }
-            } );
-        </script>
-        <style>
-            .playlist {
-                overflow: hidden;   
-            }
-            .playlist.bottom {
-                width: 100%;
-                height: auto;
-                clear: both;
-            }
-            .playlist.right {
-                width: 30%;
-                float: left;
-                overflow-y: scroll;
-            }
-            .playlist-item {
-                cursor: pointer;
-                width: 100%;
-                padding: 3px;
-            }
-            .playlist-item > img {
-                width: 50px;
-                height: 50px;
-            }
-            .playlist-item > span {
-                height: 50px;
-                margin-left: 5px;
-                font-size: small;
-            }
-        </style>
+    // Outuput base html on page
+    return <<<EOF
+<div class="hewa-container">
+    <div class="hewa-player-container">
+        <div id="$id">$loading</div>
+    </div>
+    <div class="hewa-listbar-container">
+        <ul id="$id-listbar" class="hewa-listbar"></ul>
+    </div>
+</div>
 EOF;
-
-    return $result;
-
 }
 add_shortcode( HEWA_SHORTCODE_PREFIX . 'player', 'hewa_shortcode_player' );
 
