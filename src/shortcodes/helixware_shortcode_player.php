@@ -86,6 +86,7 @@ function hewa_shortcode_player( $atts ) {
             'position' => $params['listbar'],
            'size'     => $params['listbar_size']
         );
+        unset( $params['listbar'] );
     }
 
     // Set the GA setting.
@@ -102,7 +103,7 @@ function hewa_shortcode_player( $atts ) {
         <div id="$id-playlist" class="playlist"></div>   <!-- Playlist div -->
         <script type="text/javascript">
             jQuery( function( $ ) {
-                var listBar = $player_listbar_json.listbar;
+                var listBar = $player_listbar_json;
                 var threshold = 600;    // Switch playlist position threshold
                 var playlistSelector = '#' + '$id-playlist';
                 var videoSelector = '#' + '$id';
